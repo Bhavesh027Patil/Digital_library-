@@ -1,0 +1,63 @@
+body {
+    background: linear-gradient(to right, #e3f2fd, #ffffff);
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+/* Container */
+.container {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    margin-top: 30px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+
+/* Headings */
+h1, h2 {
+    color: #333;
+    font-weight: 600;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 20px;
+    transition: 0.3s;
+}
+
+.btn:hover {
+    transform: scale(1.05);
+}
+
+/* Table */
+.table {
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.table th {
+    text-align: center;
+}
+
+/* Search box */
+input[type="text"] {
+    border-radius: 20px;
+    padding: 10px;
+}
+
+/* Hover effect */
+tr:hover {
+    background-color: #f1f1f1;
+}
+
+form a {
+    color: #888;
+}
+
+form a:hover {
+    color: red;
+}

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
+     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-dark bg-dark px-3">
+    <span class="navbar-brand">📊 Admin Dashboard</span>
+    <a href="/" class="btn btn-light btn-sm">Home</a>
+</nav>
+
+<div class="container mt-5">
+
+    <h2>Welcome Admin 👑</h2>
+
+    <div class="mt-4">
+        <a href="/upload" class="btn btn-success">Upload Notes</a>
+        <a href="/notes" class="btn btn-primary">View Notes</a>
+    </div>
+
+</div>
+
+</body>
+</html>
