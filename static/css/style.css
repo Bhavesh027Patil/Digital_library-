@@ -61,3 +61,36 @@ form a {
 form a:hover {
     color: red;
 }
+/* Card Hover Effect */
+.note-card {
+    transition: 0.3s;
+    border-radius: 10px;
+}
+
+.note-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+}
+
+/* Button spacing */
+.card .btn {
+    width: 48%;
+}
+/* Dark Mode */
+.dark-mode {
+    background-color: #121212;
+    color: white;
+}
+
+.dark-mode .container {
+    background-color: #1e1e1e;
+}
+
+.dark-mode .card {
+    background-color: #2c2c2c;
+    color: white;
+}
+
+.dark-mode .navbar {
+    background-color: #000 !important;
+}

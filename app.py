@@ -139,6 +139,23 @@ def upload():
     return render_template('upload.html')
 
 
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM notes WHERE title LIKE ? OR subject LIKE ?", 
+              ('%' + query + '%', '%' + query + '%'))
+
+    results = c.fetchall()
+    conn.close()
+
+    return {"data": results}
+
+
+
 # -------------------- RUN APP --------------------
 if __name__ == '__main__':
     app.run(debug=True)
