@@ -29,7 +29,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username')
         session['user'] = username
-        return redirect(url_for('upload'))
+        return redirect(url_for('notes'))
     return render_template('login.html')
 
 # ------------------ LOGOUT ------------------
