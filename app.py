@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session, url_for
+from flask import Flask, render_template, request, redirect, session
 import sqlite3
 import cloudinary
 import cloudinary.uploader
@@ -74,20 +74,21 @@ def upload():
         file = request.files.get('file')
 
         if file:
-            # Upload to Cloudinary
-          result = cloudinary.uploader.upload(
-    file,
-    resource_type="auto",
-    type="upload",
-    access_mode="public"
-)
+            # 🔥 Upload to Cloudinary (FIXED FOR PDF)
+            result = cloudinary.uploader.upload(
+                file,
+                resource_type="raw"
+            )
+
             file_url = result['secure_url']
 
-            # Save to database
+            # Save to DB
             conn = sqlite3.connect('database.db')
             c = conn.cursor()
-            c.execute("INSERT INTO notes (title, subject, file_path) VALUES (?, ?, ?)",
-                      (title, subject, file_url))
+            c.execute(
+                "INSERT INTO notes (title, subject, file_path) VALUES (?, ?, ?)",
+                (title, subject, file_url)
+            )
             conn.commit()
             conn.close()
 
@@ -109,17 +110,17 @@ def notes():
 
     return render_template('notes.html', notes=data)
 
-# ------------------ LIVE SEARCH API ------------------
+# ------------------ SEARCH ------------------
 @app.route('/search')
 def search():
     query = request.args.get('q', '')
 
     conn = sqlite3.connect('database.db')
     c = conn.cursor()
-
-    c.execute("SELECT * FROM notes WHERE title LIKE ? OR subject LIKE ?",
-              ('%' + query + '%', '%' + query + '%'))
-
+    c.execute(
+        "SELECT * FROM notes WHERE title LIKE ? OR subject LIKE ?",
+        ('%' + query + '%', '%' + query + '%')
+    )
     results = c.fetchall()
     conn.close()
 
