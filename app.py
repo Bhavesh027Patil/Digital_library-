@@ -75,7 +75,7 @@ def upload():
 
         if file:
             # Upload to Cloudinary
-            result = cloudinary.uploader.upload(file)
+            result = cloudinary.uploader.upload(file, resource_type="auto")
             file_url = result['secure_url']
 
             # Save to database

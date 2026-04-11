@@ -14,19 +14,13 @@
 
 <!-- 🔥 Navbar -->
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-
     <span class="navbar-brand">📚 Digital Library</span>
 
     <div class="ms-auto d-flex gap-2">
-
         <a href="/upload" class="btn btn-success btn-sm">Upload</a>
-
         <button onclick="toggleDarkMode()" class="btn btn-light btn-sm">🌙</button>
-
         <a href="/logout" class="btn btn-danger btn-sm">Logout</a>
-
     </div>
-
 </nav>
 
 <div class="container mt-4">
@@ -53,13 +47,13 @@
 
                     <div class="d-flex justify-content-between">
 
-                        <!-- 👁 VIEW -->
+                        <!-- 👁 VIEW (FIXED) -->
                         <a href="{{ note[3] }}" target="_blank"
                            class="btn btn-outline-primary btn-sm">
                             View
                         </a>
 
-                        <!-- ⬇ DOWNLOAD -->
+                        <!-- ⬇ DOWNLOAD (FIXED) -->
                         <a href="{{ note[3] }}" download
                            class="btn btn-primary btn-sm">
                             Download
