@@ -1,13 +1,17 @@
-from flask import Flask, render_template, request, redirect, send_from_directory, session, url_for
-import os
+from flask import Flask, render_template, request, redirect, session, url_for
+import sqlite3
+import cloudinary
+import cloudinary.uploader
 
-# ------------------ CONFIG ------------------
-app = Flask(__name__, template_folder='templates', static_folder='static')
-app.config['UPLOAD_FOLDER'] = 'uploads'
+app = Flask(__name__)
 app.secret_key = 'secret123'
 
-# Ensure upload folder exists
-os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
+# ------------------ CLOUDINARY CONFIG ------------------
+cloudinary.config(
+    cloud_name="dxcb4cs0v",
+    api_key="259243188459621",
+    api_secret="rcGt0UMCn2pEu-_inyM1bRRDJpg"
+)
 
 # ------------------ HOME ------------------
 @app.route('/')
@@ -19,8 +23,16 @@ def home():
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        # You can store in DB here
-        return redirect(url_for('login'))
+        password = request.form.get('password')
+
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, password))
+        conn.commit()
+        conn.close()
+
+        return redirect('/login')
+
     return render_template('register.html')
 
 # ------------------ LOGIN ------------------
@@ -28,41 +40,85 @@ def register():
 def login():
     if request.method == 'POST':
         username = request.form.get('username')
-        session['user'] = username
-        return redirect(url_for('notes'))
+        password = request.form.get('password')
+
+        conn = sqlite3.connect('database.db')
+        c = conn.cursor()
+        c.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))
+        user = c.fetchone()
+        conn.close()
+
+        if user:
+            session['user'] = username
+            return redirect('/notes')
+        else:
+            return "Invalid Credentials ❌"
+
     return render_template('login.html')
 
 # ------------------ LOGOUT ------------------
 @app.route('/logout')
 def logout():
     session.pop('user', None)
-    return redirect(url_for('home'))
+    return redirect('/')
 
 # ------------------ UPLOAD ------------------
 @app.route('/upload', methods=['GET', 'POST'])
 def upload():
     if 'user' not in session:
-        return redirect(url_for('login'))
+        return redirect('/login')
 
     if request.method == 'POST':
+        title = request.form.get('title')
+        subject = request.form.get('subject')
         file = request.files.get('file')
+
         if file:
-            filepath = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-            file.save(filepath)
-            return redirect(url_for('notes'))
+            # Upload to Cloudinary
+            result = cloudinary.uploader.upload(file)
+            file_url = result['secure_url']
+
+            # Save to database
+            conn = sqlite3.connect('database.db')
+            c = conn.cursor()
+            c.execute("INSERT INTO notes (title, subject, file_path) VALUES (?, ?, ?)",
+                      (title, subject, file_url))
+            conn.commit()
+            conn.close()
+
+            return redirect('/notes')
 
     return render_template('upload.html')
 
 # ------------------ NOTES ------------------
 @app.route('/notes')
 def notes():
-    files = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template('notes.html', files=files)
+    if 'user' not in session:
+        return redirect('/login')
 
-# ------------------ DOWNLOAD ------------------
-@app.route('/uploads/<filename>')
-def uploaded_file(filename):
-    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM notes")
+    data = c.fetchall()
+    conn.close()
+
+    return render_template('notes.html', notes=data)
+
+# ------------------ LIVE SEARCH API ------------------
+@app.route('/search')
+def search():
+    query = request.args.get('q', '')
+
+    conn = sqlite3.connect('database.db')
+    c = conn.cursor()
+
+    c.execute("SELECT * FROM notes WHERE title LIKE ? OR subject LIKE ?",
+              ('%' + query + '%', '%' + query + '%'))
+
+    results = c.fetchall()
+    conn.close()
+
+    return {"data": results}
 
 # ------------------ RUN ------------------
 if __name__ == '__main__':

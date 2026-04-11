@@ -54,13 +54,13 @@
                     <div class="d-flex justify-content-between">
 
                         <!-- 👁 VIEW -->
-                        <a href="/uploads/{{ note[3] }}" target="_blank"
+                        <a href="{{ note[3] }}" target="_blank"
                            class="btn btn-outline-primary btn-sm">
                             View
                         </a>
 
                         <!-- ⬇ DOWNLOAD -->
-                        <a href="{{ url_for('uploaded_file', filename=note[3]) }}"
+                        <a href="{{ note[3] }}" download
                            class="btn btn-primary btn-sm">
                             Download
                         </a>
@@ -87,7 +87,7 @@ const searchBox = document.getElementById("searchBox");
 searchBox.addEventListener("keyup", function() {
     let query = searchBox.value;
 
-    fetch(`/search?q=${query}`)
+    fetch(`/search?q=${encodeURIComponent(query)}`)
         .then(res => res.json())
         .then(data => {
 
@@ -103,10 +103,10 @@ searchBox.addEventListener("keyup", function() {
                             <p class="text-muted">${note[2]}</p>
 
                             <div class="d-flex justify-content-between">
-                                <a href="/uploads/${note[3]}" target="_blank"
+                                <a href="${note[3]}" target="_blank"
                                    class="btn btn-outline-primary btn-sm">View</a>
 
-                                <a href="/uploads/${note[3]}"
+                                <a href="${note[3]}" download
                                    class="btn btn-primary btn-sm">Download</a>
                             </div>
                         </div>
