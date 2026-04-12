@@ -1,34 +1,29 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Register</title>
+{% extends "base.html" %}
+{% block title %}Register — NotesHub{% endblock %}
 
-    <!-- Bootstrap -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <!-- Custom CSS -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-
-<body>
-
-<div class="container mt-5" style="max-width: 400px;">
-
-    <h2 class="text-center mb-4">Register</h2>
-
-    <form method="POST">
-
-        <input type="text" name="username" placeholder="Username"
-               class="form-control mb-3" required>
-
-        <input type="password" name="password" placeholder="Password"
-               class="form-control mb-3" required>
-
-        <button class="btn btn-success w-100">Register</button>
-
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-head">
+    <h1>Create account</h1>
+    <p>Join the notes community for free</p>
+  </div>
+  <div class="card">
+    <form method="POST" action="{{ url_for('register') }}">
+      <div class="form-group">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" placeholder="choose a username" required autofocus minlength="3">
+        <div class="hint">At least 3 characters.</div>
+      </div>
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="choose a strong password" required minlength="6">
+        <div class="hint">At least 6 characters. Stored securely (hashed).</div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Create Account →</button>
     </form>
-
+  </div>
+  <div class="auth-foot" style="margin-top:1rem;">
+    Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+  </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

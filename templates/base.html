@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>{% block title %}NotesHub{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<nav class="nav">
+  <a class="nav-brand" href="{{ url_for('home') }}">Notes<b>Hub</b></a>
+
+  <ul class="nav-links">
+    {% if session.get('user') %}
+      <li><a href="{{ url_for('notes') }}">Library</a></li>
+      <li><a href="{{ url_for('upload') }}">Upload</a></li>
+      <li><a href="{{ url_for('logout') }}">Log out</a></li>
+    {% else %}
+      <li><a href="{{ url_for('login') }}">Log in</a></li>
+      <li><a href="{{ url_for('register') }}" class="btn-nav">Register</a></li>
+    {% endif %}
+    {% if session.get('admin') %}
+      <li><a href="{{ url_for('admin_dashboard') }}" style="color:var(--danger-fg);">Admin ⚡</a></li>
+      <li><a href="{{ url_for('admin_logout') }}" style="font-size:0.65rem">Exit Admin</a></li>
+    {% endif %}
+  </ul>
+
+  <!-- Theme Toggle -->
+  <button class="theme-toggle" id="themeToggle" title="Toggle light/dark">
+    <span id="themeIcon">☀️</span>
+    <span class="theme-label" id="themeLabel">Light</span>
+  </button>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for cat, msg in messages %}
+        <div class="flash {{ cat }}">
+          {% if cat == 'success' %}✓{% else %}✕{% endif %} {{ msg }}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>{% block content %}{% endblock %}</main>
+
+<footer>NotesHub — A scholarly repository &nbsp;·&nbsp; <a href="{{ url_for('admin_login') }}" style="color:var(--muted);text-decoration:none;">Admin</a></footer>
+
+<script>
+  // ── Theme persistence ───────────────────────────────
+  const root = document.documentElement;
+  const btn  = document.getElementById('themeToggle');
+  const icon = document.getElementById('themeIcon');
+  const lbl  = document.getElementById('themeLabel');
+
+  function applyTheme(t) {
+    root.setAttribute('data-theme', t);
+    if (t === 'light') {
+      icon.textContent = '🌙';
+      lbl.textContent  = 'Dark';
+    } else {
+      icon.textContent = '☀️';
+      lbl.textContent  = 'Light';
+    }
+    localStorage.setItem('nh-theme', t);
+  }
+
+  // Load saved preference
+  const saved = localStorage.getItem('nh-theme') || 'dark';
+  applyTheme(saved);
+
+  btn.addEventListener('click', () => {
+    const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+  });
+</script>
+
+</body>
+</html>

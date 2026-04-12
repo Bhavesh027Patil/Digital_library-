@@ -1,16 +1,79 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Digital Library</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body class="container text-center mt-5">
+{% extends "base.html" %}
+{% block title %}NotesHub — Scholarly Notes Repository{% endblock %}
 
-<h1>📚 Digital Library</h1>
+{% block content %}
+<div class="hero">
+  <div class="hero-eyebrow">Knowledge Shared</div>
+  <h1>Your Academic<br><em>Notes Library</em></h1>
+  <p class="hero-sub">Upload, discover and download scholarly notes. A quiet corner of the internet for serious students.</p>
+  <div class="hero-ctas">
+    {% if session.get('user') %}
+      <a href="{{ url_for('notes') }}" class="btn btn-primary">Browse Library</a>
+      <a href="{{ url_for('upload') }}" class="btn btn-ghost">Upload Notes</a>
+    {% else %}
+      <a href="{{ url_for('register') }}" class="btn btn-primary">Get Started Free</a>
+      <a href="{{ url_for('login') }}" class="btn btn-ghost">Log In</a>
+    {% endif %}
+  </div>
+</div>
 
-<a href="/login" class="btn btn-primary mt-3">Login</a>
-<a href="/register" class="btn btn-success mt-3">Register</a>
+<!-- Stats row -->
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-num">{{ total_notes }}</div>
+    <div class="stat-label">Notes shared</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ total_users }}</div>
+    <div class="stat-label">Registered users</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">∞</div>
+    <div class="stat-label">Subjects supported</div>
+  </div>
+</div>
 
-</body>
-</html>
+<!-- Features -->
+<div class="features-grid">
+  <div class="feat">
+    <span class="feat-icon">📁</span>
+    <h3>Any File Format</h3>
+    <p>PDF, Word, PowerPoint, images — stored on Cloudinary for fast global access.</p>
+  </div>
+  <div class="feat">
+    <span class="feat-icon">🔍</span>
+    <h3>Smart Search</h3>
+    <p>Find notes instantly by title, subject or description. Filter by category.</p>
+  </div>
+  <div class="feat">
+    <span class="feat-icon">📥</span>
+    <h3>View &amp; Download</h3>
+    <p>Open notes in your browser or download for offline study — always works.</p>
+  </div>
+  <div class="feat">
+    <span class="feat-icon">🔐</span>
+    <h3>Secure Accounts</h3>
+    <p>Passwords are hashed. You control your uploads and can delete anytime.</p>
+  </div>
+</div>
+
+{% if recent %}
+<div class="section-label">Recently uploaded</div>
+<div class="recent-grid">
+  {% for n in recent %}
+  <a href="{{ url_for('notes') }}" class="recent-card">
+    <div class="rc-sub">{{ n['subject'] }}</div>
+    <div class="rc-title">{{ n['title'] }}</div>
+    <div class="rc-by">by {{ n['uploaded_by'] or 'anonymous' }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+<!-- Admin link (subtle, in footer area here too) -->
+<div style="text-align:center;margin-top:3rem;">
+  <a href="{{ url_for('admin_login') }}" style="font-family:'DM Mono',monospace;font-size:0.68rem;color:var(--muted);text-decoration:none;letter-spacing:0.06em;text-transform:uppercase;">
+    🔑 Admin Portal
+  </a>
+</div>
+{% endblock %}

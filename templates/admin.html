@@ -1,28 +1,170 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin Panel</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet">
-     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — NotesHub{% endblock %}
 
-<!-- Navbar -->
-<nav class="navbar navbar-dark bg-dark px-3">
-    <span class="navbar-brand">📊 Admin Dashboard</span>
-    <a href="/" class="btn btn-light btn-sm">Home</a>
-</nav>
-
-<div class="container mt-5">
-
-    <h2>Welcome Admin 👑</h2>
-
-    <div class="mt-4">
-        <a href="/upload" class="btn btn-success">Upload Notes</a>
-        <a href="/notes" class="btn btn-primary">View Notes</a>
-    </div>
-
+{% block content %}
+<div class="page-header">
+  <div style="display:flex;align-items:center;gap:0.9rem;flex-wrap:wrap;">
+    <h1 style="margin-bottom:0;">Dashboard</h1>
+    <span class="admin-chip">⚡ Admin Mode</span>
+  </div>
+  <p style="margin-top:0.3rem;">Full control over all notes and users.</p>
 </div>
 
-</body>
-</html>
+<!-- Stats -->
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="stat-num">{{ stats.total_notes }}</div>
+    <div class="stat-label">Total notes</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num">{{ stats.total_users }}</div>
+    <div class="stat-label">Registered users</div>
+  </div>
+  <div class="stat-card" style="cursor:pointer;" onclick="document.getElementById('usersSection').scrollIntoView({behavior:'smooth'})">
+    <div class="stat-num" style="font-size:1.6rem;">↓</div>
+    <div class="stat-label">View all users</div>
+  </div>
+</div>
+
+<!-- Search bar -->
+<form method="GET" action="{{ url_for('admin_dashboard') }}" class="toolbar" style="margin-bottom:1.4rem;">
+  <div class="search-box">
+    <span class="search-icon">🔍</span>
+    <input type="text" name="q" placeholder="Search notes by title, subject, uploader…"
+           value="{{ query }}" autocomplete="off">
+  </div>
+  <button type="submit" class="btn btn-ghost btn-sm">Search</button>
+  {% if query %}
+    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">✕ Clear</a>
+  {% endif %}
+</form>
+
+<!-- Notes table -->
+<div style="margin-bottom:0.75rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:0.5rem;">
+  <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">
+    All Notes — {{ notes | length }} shown
+  </span>
+</div>
+
+{% if notes %}
+<div class="admin-table-wrap" style="margin-bottom:2.5rem;">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Title</th>
+        <th>Subject</th>
+        <th>Uploader</th>
+        <th>Type</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for note in notes %}
+      <tr>
+        <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:0.72rem;">{{ note['id'] }}</td>
+        <td>
+          <div style="font-weight:500;color:var(--cream);max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            {{ note['title'] }}
+          </div>
+          {% if note['original_filename'] %}
+            <div style="font-family:'DM Mono',monospace;font-size:0.62rem;color:var(--muted);margin-top:0.15rem;">
+              {{ note['original_filename'][-35:] }}
+            </div>
+          {% endif %}
+        </td>
+        <td><span class="note-subject" style="font-size:0.6rem;">{{ note['subject'] }}</span></td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.78rem;">{{ note['uploaded_by'] or '—' }}</td>
+        <td>
+          <span class="badge badge-{{ note['file_type'] or 'raw' }}">{{ note['file_type'] or 'raw' }}</span>
+        </td>
+        <td style="font-family:'DM Mono',monospace;font-size:0.72rem;color:var(--muted);white-space:nowrap;">
+          {{ (note['created_at'] or '')[:10] or '—' }}
+        </td>
+        <td>
+          <div style="display:flex;gap:0.35rem;flex-wrap:wrap;">
+            {# View #}
+            {% set fname = (note['original_filename'] or note['file_path']).lower() %}
+            {% if fname.endswith('.pdf') %}
+              <a href="https://docs.google.com/viewer?url={{ note['file_path'] | urlencode }}"
+                 target="_blank" class="btn-view btn-sm" style="font-size:0.65rem;">View</a>
+            {% else %}
+              <a href="{{ note['file_path'] }}" target="_blank" class="btn-view btn-sm" style="font-size:0.65rem;">View</a>
+            {% endif %}
+
+            {# Download #}
+            {% if note['file_type'] == 'raw' %}
+              {% set dl = note['file_path'].replace('/upload/', '/upload/fl_attachment/') %}
+            {% else %}
+              {% set dl = note['file_path'] %}
+            {% endif %}
+            <a href="{{ dl }}" download target="_blank" class="btn-dl btn-sm" style="font-size:0.65rem;">↓ DL</a>
+
+            {# Admin delete #}
+            <form class="inline" method="POST"
+                  action="{{ url_for('admin_delete_note', note_id=note['id']) }}"
+                  onsubmit="return confirm('Permanently delete: {{ note['title'] }}?')">
+              <button type="submit" class="btn-del" style="font-size:0.65rem;">✕ Delete</button>
+            </form>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% else %}
+<div class="empty-state" style="padding:2rem;">
+  <span class="ei">📭</span>
+  <h2>No notes found</h2>
+  <p>{% if query %}Try a different search.{% else %}No notes uploaded yet.{% endif %}</p>
+</div>
+{% endif %}
+
+<!-- Users table -->
+<div id="usersSection">
+  <div style="margin-bottom:0.75rem;display:flex;align-items:center;gap:0.75rem;">
+    <span style="font-family:'DM Mono',monospace;font-size:0.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;">
+      Registered Users — {{ users | length }}
+    </span>
+  </div>
+  <div class="admin-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Username</th>
+          <th>Notes uploaded</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td style="color:var(--muted);font-family:'DM Mono',monospace;font-size:0.72rem;">{{ u['id'] }}</td>
+          <td style="font-weight:500;color:var(--cream);font-family:'DM Mono',monospace;">{{ u['username'] }}</td>
+          <td style="font-family:'DM Mono',monospace;font-size:0.78rem;color:var(--muted);">
+            <!-- count inline -->
+            {% set count = notes | selectattr('uploaded_by', 'equalto', u['username']) | list | length %}
+            {{ count }}
+          </td>
+          <td>
+            <form class="inline" method="POST"
+                  action="{{ url_for('admin_delete_user', user_id=u['id']) }}"
+                  onsubmit="return confirm('Delete user {{ u['username'] }} and all their data?')">
+              <button type="submit" class="btn-del" style="font-size:0.65rem;">✕ Delete User</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div style="margin-top:2rem;text-align:right;">
+  <a href="{{ url_for('admin_logout') }}" class="btn btn-ghost btn-sm">Exit Admin Mode</a>
+</div>
+{% endblock %}
