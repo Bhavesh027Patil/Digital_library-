@@ -8,7 +8,7 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'noteshub-secret-key-change-in-prod')
 
-# ── Cloudinary ──────────────────────────────────────────────
+# ── Cloudinary (USE ENV VARIABLES IN PRODUCTION) ─────────────
 cloudinary.config(
     cloud_name=os.environ.get('CLOUDINARY_CLOUD_NAME', 'dxcb4cs0v'),
     api_key=os.environ.get('CLOUDINARY_API_KEY', '259243188459621'),
@@ -16,7 +16,7 @@ cloudinary.config(
 )
 
 DB_PATH = os.environ.get('DB_PATH', 'database.db')
-ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin@noteshub')   # change this
+ADMIN_PASSWORD = os.environ.get('ADMIN_PASSWORD', 'admin@noteshub')
 
 
 def get_db():
@@ -31,9 +31,7 @@ def home():
     conn = get_db()
     total_notes = conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0]
     total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
-    recent = conn.execute(
-        "SELECT * FROM notes ORDER BY id DESC LIMIT 4"
-    ).fetchall()
+    recent = conn.execute("SELECT * FROM notes ORDER BY id DESC LIMIT 4").fetchall()
     conn.close()
     return render_template('index.html', total_notes=total_notes,
                            total_users=total_users, recent=recent)
@@ -81,6 +79,7 @@ def login():
             session['user_id'] = user['id']
             flash(f'Welcome back, {username}!', 'success')
             return redirect(url_for('notes'))
+
         flash('Invalid username or password.', 'error')
     return render_template('login.html')
 
@@ -108,6 +107,7 @@ def upload():
         if not title or not subject:
             flash('Title and subject are required.', 'error')
             return render_template('upload.html')
+
         if not file or not file.filename:
             flash('Please select a file.', 'error')
             return render_template('upload.html')
@@ -121,7 +121,7 @@ def upload():
         elif ext in VIDEO_EXTS:
             resource_type = 'video'
         else:
-            resource_type = 'raw'   # PDF, DOCX, PPTX, TXT …
+            resource_type = 'raw'
 
         try:
             result = cloudinary.uploader.upload(
@@ -131,8 +131,10 @@ def upload():
                 use_filename=True,
                 unique_filename=True,
             )
+
             file_url = result['secure_url']
             original_filename = file.filename
+
         except Exception as e:
             flash(f'Upload failed: {e}', 'error')
             return render_template('upload.html')
@@ -147,6 +149,7 @@ def upload():
         )
         conn.commit()
         conn.close()
+
         flash('Notes uploaded successfully!', 'success')
         return redirect(url_for('notes'))
 
@@ -173,7 +176,8 @@ def notes():
         ).fetchall()
     elif subject_filter:
         data = conn.execute(
-            "SELECT * FROM notes WHERE subject=? ORDER BY id DESC", (subject_filter,)
+            "SELECT * FROM notes WHERE subject=? ORDER BY id DESC",
+            (subject_filter,)
         ).fetchall()
     else:
         data = conn.execute("SELECT * FROM notes ORDER BY id DESC").fetchall()
@@ -182,23 +186,62 @@ def notes():
         "SELECT DISTINCT subject FROM notes ORDER BY subject"
     ).fetchall()
     conn.close()
-    return render_template('notes.html', notes=data, subjects=subjects,
-                           query=q, subject_filter=subject_filter)
+
+    return render_template('notes.html', notes=data,
+                           subjects=subjects,
+                           query=q,
+                           subject_filter=subject_filter)
 
 
-# ── DELETE (owner only) ───────────────────────────────────────
+# ── ✅ FIXED VIEW ROUTE ───────────────────────────────────────
+@app.route('/view/<int:note_id>')
+def view(note_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    note = conn.execute("SELECT file_path FROM notes WHERE id=?", (note_id,)).fetchone()
+    conn.close()
+
+    if note:
+        return redirect(note['file_path'])  # 🔥 redirect to Cloudinary
+
+    return "File not found", 404
+
+
+# ── ✅ FIXED DOWNLOAD ROUTE ───────────────────────────────────
+@app.route('/download/<int:note_id>')
+def download(note_id):
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    conn = get_db()
+    note = conn.execute("SELECT file_path FROM notes WHERE id=?", (note_id,)).fetchone()
+    conn.close()
+
+    if note:
+        # Force download
+        return redirect(note['file_path'] + "?fl_attachment=true")
+
+    return "File not found", 404
+
+
+# ── DELETE ───────────────────────────────────────────────────
 @app.route('/delete/<int:note_id>', methods=['POST'])
 def delete_note(note_id):
     if 'user' not in session:
         return redirect(url_for('login'))
+
     conn = get_db()
     note = conn.execute("SELECT * FROM notes WHERE id=?", (note_id,)).fetchone()
+
     if note and note['uploaded_by'] == session['user']:
         conn.execute("DELETE FROM notes WHERE id=?", (note_id,))
         conn.commit()
         flash('Note deleted.', 'success')
     else:
         flash('Permission denied.', 'error')
+
     conn.close()
     return redirect(url_for('notes'))
 
@@ -207,76 +250,29 @@ def delete_note(note_id):
 @app.route('/admin/login', methods=['GET', 'POST'])
 def admin_login():
     if request.method == 'POST':
-        pwd = request.form.get('password', '')
-        if pwd == ADMIN_PASSWORD:
+        if request.form.get('password') == ADMIN_PASSWORD:
             session['admin'] = True
-            flash('Admin access granted.', 'success')
             return redirect(url_for('admin_dashboard'))
-        flash('Wrong admin password.', 'error')
+        flash('Wrong password', 'error')
     return render_template('admin_login.html')
-
-
-# ── ADMIN LOGOUT ──────────────────────────────────────────────
-@app.route('/admin/logout')
-def admin_logout():
-    session.pop('admin', None)
-    return redirect(url_for('home'))
 
 
 # ── ADMIN DASHBOARD ───────────────────────────────────────────
 @app.route('/admin')
 def admin_dashboard():
     if not session.get('admin'):
-        flash('Admin access required.', 'error')
         return redirect(url_for('admin_login'))
 
-    q = request.args.get('q', '').strip()
     conn = get_db()
-    if q:
-        all_notes = conn.execute(
-            """SELECT * FROM notes
-               WHERE title LIKE ? OR subject LIKE ? OR uploaded_by LIKE ?
-               ORDER BY id DESC""",
-            (f'%{q}%', f'%{q}%', f'%{q}%')
-        ).fetchall()
-    else:
-        all_notes = conn.execute("SELECT * FROM notes ORDER BY id DESC").fetchall()
-
-    all_users = conn.execute("SELECT * FROM users ORDER BY id DESC").fetchall()
-    stats = {
-        'total_notes': conn.execute("SELECT COUNT(*) FROM notes").fetchone()[0],
-        'total_users': conn.execute("SELECT COUNT(*) FROM users").fetchone()[0],
-    }
+    notes = conn.execute("SELECT * FROM notes ORDER BY id DESC").fetchall()
+    users = conn.execute("SELECT * FROM users").fetchall()
     conn.close()
-    return render_template('admin.html', notes=all_notes, users=all_users,
-                           stats=stats, query=q)
+
+    return render_template('admin.html', notes=notes, users=users)
 
 
-# ── ADMIN DELETE ANY NOTE ─────────────────────────────────────
-@app.route('/admin/delete/<int:note_id>', methods=['POST'])
-def admin_delete_note(note_id):
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-    conn = get_db()
-    conn.execute("DELETE FROM notes WHERE id=?", (note_id,))
-    conn.commit()
-    conn.close()
-    flash('Note deleted by admin.', 'success')
-    return redirect(url_for('admin_dashboard'))
-
-
-# ── ADMIN DELETE USER ─────────────────────────────────────────
-@app.route('/admin/delete-user/<int:user_id>', methods=['POST'])
-def admin_delete_user(user_id):
-    if not session.get('admin'):
-        return redirect(url_for('admin_login'))
-    conn = get_db()
-    conn.execute("DELETE FROM users WHERE id=?", (user_id,))
-    conn.commit()
-    conn.close()
-    flash('User deleted.', 'success')
-    return redirect(url_for('admin_dashboard'))
-
-
+# ── RUN ──────────────────────────────────────────────────────
 if __name__ == '__main__':
     app.run(debug=True)
+
+
