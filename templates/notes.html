@@ -45,9 +45,11 @@
   <div class="note-card">
     <span class="note-subject">{{ note['subject'] }}</span>
     <div class="note-title">{{ note['title'] }}</div>
+
     {% if note['description'] %}
       <div class="note-desc">{{ note['description'] }}</div>
     {% endif %}
+
     <div class="note-meta">
       <span>{{ note['uploaded_by'] or 'anonymous' }}</span>
       {% if note['created_at'] %}
@@ -55,31 +57,21 @@
         <span>{{ note['created_at'][:10] }}</span>
       {% endif %}
       <span class="dot">·</span>
-      <span>{{ (note['original_filename'] or note['file_path'])[-20:] }}</span>
+      <span>{{ (note['original_filename'] or 'file')[-20:] }}</span>
     </div>
+
     <div class="note-actions">
-      {# ── VIEW button: PDF → Google Docs viewer; others → direct tab ── #}
-      {% set fpath = note['file_path'] %}
-      {% set fname = (note['original_filename'] or fpath).lower() %}
 
-      {% if fname.endswith('.pdf') %}
-        <a href="https://docs.google.com/viewer?url={{ fpath | urlencode }}&embedded=false"
-           target="_blank" rel="noopener" class="btn-view">👁 View</a>
-      {% elif note['file_type'] == 'image' %}
-        <a href="{{ fpath }}" target="_blank" rel="noopener" class="btn-view">👁 View</a>
-      {% else %}
-        <a href="{{ fpath }}" target="_blank" rel="noopener" class="btn-view">👁 View</a>
-      {% endif %}
+      <!-- ✅ FIXED VIEW BUTTON -->
+      <a href="{{ url_for('view', note_id=note['id']) }}"
+         target="_blank"
+         class="btn-view">👁 View</a>
 
-      {# ── DOWNLOAD: force download via Cloudinary fl_attachment ── #}
-      {% if note['file_type'] == 'raw' %}
-        {% set dl_url = fpath.replace('/upload/', '/upload/fl_attachment/') %}
-      {% else %}
-        {% set dl_url = fpath %}
-      {% endif %}
-      <a href="{{ dl_url }}" download target="_blank" rel="noopener" class="btn-dl">↓ Download</a>
+      <!-- ✅ FIXED DOWNLOAD BUTTON -->
+      <a href="{{ url_for('download', note_id=note['id']) }}"
+         class="btn-dl">↓ Download</a>
 
-      {# Owner delete #}
+      <!-- Owner delete -->
       {% if session.get('user') == note['uploaded_by'] %}
         <form class="inline" method="POST"
               action="{{ url_for('delete_note', note_id=note['id']) }}"
@@ -88,14 +80,18 @@
         </form>
       {% endif %}
 
-      {# Admin delete badge #}
+      <!-- Admin delete -->
       {% if session.get('admin') %}
         <form class="inline" method="POST"
               action="{{ url_for('admin_delete_note', note_id=note['id']) }}"
               onsubmit="return confirm('Admin: delete this note?')">
-          <button type="submit" class="btn-del" style="border-color:rgba(192,57,43,0.6);font-size:0.62rem;">⚡ Admin Del</button>
+          <button type="submit" class="btn-del"
+                  style="border-color:rgba(192,57,43,0.6);font-size:0.62rem;">
+            ⚡ Admin Del
+          </button>
         </form>
       {% endif %}
+
     </div>
   </div>
   {% endfor %}
@@ -105,9 +101,16 @@
 <div class="empty-state">
   <span class="ei">📭</span>
   <h2>Nothing here yet</h2>
-  <p>{% if query %}No notes matched — try different keywords.
-     {% else %}Be the first to share some notes!{% endif %}</p>
-  <a href="{{ url_for('upload') }}" class="btn btn-primary" style="margin-top:1.2rem;">↑ Upload Notes</a>
+  <p>
+    {% if query %}
+      No notes matched — try different keywords.
+    {% else %}
+      Be the first to share some notes!
+    {% endif %}
+  </p>
+  <a href="{{ url_for('upload') }}" class="btn btn-primary" style="margin-top:1.2rem;">
+    ↑ Upload Notes
+  </a>
 </div>
 {% endif %}
 
