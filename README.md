@@ -44,7 +44,7 @@ Start command: `gunicorn app:app`
 | `SECRET_KEY` | `noteshub-secret-key-change-in-prod` | Flask session secret |
 | `CLOUDINARY_CLOUD_NAME` | `dxcb4cs0v` | Cloudinary cloud |
 | `CLOUDINARY_API_KEY` | `259243188459621` | Cloudinary key |
-| `CLOUDINARY_API_SECRET` | `rcGt0UMCn2pEu-_inyM1bRRDJpg` | Cloudinary secret |
+| `CLOUDINARY_API_SECRET` | `123` | Cloudinary secret |
 | `ADMIN_PASSWORD` | `admin@noteshub` | Admin portal password |
 | `DB_PATH` | `database.db` | SQLite path |
 
